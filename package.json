@@ -10,9 +10,10 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "jssip": "Jhoy1992/JsSIP",
     "react": "16.9.0",
     "react-native": "0.61.4",
-    "react-native-webrtc": "^1.75.1",
+    "react-native-webrtc": "^1.84.1",
     "socket.io-client": "^2.1.1"
   },
   "devDependencies": {

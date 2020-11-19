@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "976633824502",
+    "firebase_url": "https://brekeke-18efb.firebaseio.com",
+    "project_id": "brekeke-18efb",
+    "storage_bucket": "brekeke-18efb.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:976633824502:android:041a4fe0fe9da4b4e8d8d7",
+        "android_client_info": {
+          "package_name": "com.webrtc"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "976633824502-00fu06u0b42gnd9ian2e45v7f0uh0f4f.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDXr2h2OqMzYeUrY5Ju09Spk0EykosX29s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "976633824502-00fu06u0b42gnd9ian2e45v7f0uh0f4f.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
