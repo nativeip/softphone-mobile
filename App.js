@@ -1,14 +1,9 @@
 import React, {useState, useEffect, useCallback} from 'react';
-import {Text, StatusBar, Button} from 'react-native';
-import {
-  registerGlobals,
-  mediaDevices,
-  RTCPeerConnection,
-  RTCIceCandidate,
-  MediaStream,
-  RTCSessionDescription,
-  MediaStreamTrack,
-} from 'react-native-webrtc';
+import {Text, StatusBar, Button, Vibration, AppRegistry} from 'react-native';
+import {RTCPeerConnection} from 'react-native-webrtc';
+import InCallManager from 'react-native-incall-manager';
+import CallKeep from 'react-native-callkeep';
+import ramdomUuid from 'uuid-random';
 import * as JsSIP from 'jssip';
 
 import useReferredState from './src/hooks/useReferredState';
@@ -20,22 +15,39 @@ const App = () => {
     user: '111',
   });
 
+  const callOptions = {
+    mediaConstraints: {
+      audio: true,
+      video: false,
+      pcConfig: {
+        iceServers: [{urls: ['stun:stun.l.google.com:19302']}],
+      },
+    },
+  };
+
   const [phoneStatus, setPhoneStatus] = useState('');
-  const [isFront, setIsFront] = useState(false);
-  const [stream, streamRef, setStream] = useReferredState(null);
+  const [callUuid, setCallUuid] = useState('');
+  const [callStatus, setCallStatus] = useState('');
+  const [callTime, setCallTime] = useState(0);
+  const [caller, setCaller] = useState({});
+  const [callNumber, setCallNumber] = useState('');
   const [phone, phoneRef, setPhone] = useReferredState(null);
   const [session, sessionRef, setSession] = useReferredState(null);
 
   useEffect(() => {
-    registerGlobals();
+    requestPermissions();
     register();
-
-    JsSIP.debug.enable('JsSIP:*');
 
     return unregister;
   }, [register, unregister]);
 
   const register = useCallback(() => {
+    RTCPeerConnection.prototype.addTrack = function(track, stream) {
+      this.addStream(stream);
+    };
+
+    configureCallKeep();
+
     JsSIP.debug.enable('JsSIP:*');
 
     if (!peer.server || !peer.pass || !peer.user) {
@@ -67,11 +79,12 @@ const App = () => {
       setPhoneStatus('Falha de registro'),
     );
 
-    // newPhone.on('newRTCSession', event => handleNewSession(event.session));
+    newPhone.on('newRTCSession', event => handleNewSession(event.session));
 
     newPhone.start();
+
     setPhone(newPhone);
-  }, [peer, setPhone]);
+  }, [peer, setPhone, handleNewSession]);
 
   const unregister = useCallback(() => {
     if (!phoneRef.current) {
@@ -85,61 +98,184 @@ const App = () => {
     phoneRef.current.unregister();
 
     setPhone(null);
+    CallKeep.setAvailable(false);
   }, [phoneRef, setPhone]);
 
-  const answerOrCall = callNumber => {
-    const callOptions = {
-      mediaConstraints: {
-        audio: true,
-        video: false,
-        pcConfig: {
-          iceServers: [{urls: ['stun:stun.l.google.com:19302']}],
-        },
+  const requestPermissions = async () => {
+    if (InCallManager.recordPermission !== 'granted') {
+      try {
+        await InCallManager.requestRecordPermission();
+      } catch (error) {
+        console.error(
+          'Error getting permissions to record audio: ',
+          error.message,
+        );
+      }
+    }
+
+    if (InCallManager.cameraPermission !== 'granted') {
+      try {
+        await InCallManager.requestCameraPermission();
+      } catch (error) {
+        console.error('Error getting permissions to  camera: ', error.message);
+      }
+    }
+  };
+
+  const configureCallKeep = async () => {
+    AppRegistry.registerHeadlessTask(
+      'RNCallKeepBackgroundMessage',
+      () => ({name, callUUID, handle}) => {
+        // Make your call here
+        console.log('>>> Make your call now');
+
+        return Promise.resolve();
+      },
+    );
+
+    const options = {
+      ios: {
+        appName: 'Infinity Softphone',
+      },
+      android: {
+        alertTitle: 'Permissions required',
+        alertDescription:
+          'This application needs to access your phone accounts',
+        cancelButton: 'Cancel',
+        okButton: 'ok',
+        imageName: 'phone_account_icon',
+        // additionalPermissions: [PermissionsAndroid.PERMISSIONS.example]
       },
     };
 
+    await CallKeep.setup(options);
+    CallKeep.setAvailable(true);
+  };
+
+  const makeCall = number => {
     if (!phoneRef.current?.isRegistered()) {
       return;
     }
 
     const newSession = phoneRef.current.call(
-      `sip:${callNumber}@${peer.server}`,
+      `sip:${number}@${peer.server}`,
       callOptions,
     );
 
-    addTrack(newSession, newSession.connection);
     setSession(newSession);
+    const uuid = ramdomUuid();
+    CallKeep.startCall(uuid, number, 'Fábio Gross');
+    setCallUuid(uuid);
   };
 
-  const addTrack = (newSession, connection) => {
-    connection.ontrack = event => {
-      newSession.stream = event.streams[0];
-    };
+  const answerCall = () => {
+    if (sessionRef.current?.isInProgress()) {
+      sessionRef.current.answer(callOptions);
+      CallKeep.answerIncomingCall(callUuid);
+    }
   };
+
+  const handleNewSession = useCallback(
+    newSession => {
+      if (newSession.direction === 'incoming') {
+        InCallManager.startRingtone('_BUNDLE_');
+        Vibration.vibrate([1000, 2000, 3000], true);
+      }
+
+      newSession.on('ended', () => clearSession(newSession));
+      newSession.on('failed', () => clearSession(newSession));
+      newSession.on('accepted', () => updateUI(newSession));
+      newSession.on('confirmed', () => updateUI(newSession));
+
+      updateUI(newSession);
+      setSession(newSession);
+    },
+    [clearSession, setSession, updateUI],
+  );
+
+  const updateUI = useCallback(
+    newSession => {
+      if (newSession.isInProgress()) {
+        const number = newSession.remote_identity.uri.user;
+        const name = newSession.remote_identity.display_name;
+        const isIncoming = newSession.direction === 'incoming';
+
+        setCaller({number, name});
+
+        if (isIncoming) {
+          const uuid = ramdomUuid();
+          CallKeep.displayIncomingCall(uuid, number, name);
+
+          setCallStatus('Recebendo ligação...');
+          setCallUuid(uuid);
+        }
+
+        if (!isIncoming) {
+          setCallStatus('Discando...');
+        }
+      }
+
+      if (newSession.isEstablished()) {
+        setCallStatus('Em ligação...');
+        const name = newSession.remote_identity.display_name;
+        CallKeep.updateDisplay(callUuid, name);
+
+        // startCallTimer();
+
+        InCallManager.stopRingtone();
+        Vibration.cancel();
+        InCallManager.start({media: 'audio'});
+      }
+    },
+    [callUuid],
+  );
+
+  const clearSession = useCallback(
+    newSession => {
+      if (newSession?.isEstablished() || newSession?.isInProgress()) {
+        newSession.terminate();
+      }
+
+      InCallManager.stopRingtone();
+      Vibration.cancel();
+
+      // stopCallTimer();
+
+      InCallManager.stop();
+      CallKeep.endCall(callUuid);
+
+      setCallUuid('');
+      setCallStatus('');
+      setCallNumber('');
+      setCaller({});
+      setCallTime(0);
+      setSession(null);
+    },
+    [setSession, callUuid],
+  );
 
   return (
     <>
       <StatusBar barStyle="dark-content" backgroundColor="white" />
       <Text>{phoneStatus}</Text>
+      <Text>{callStatus}</Text>
 
-      <Button
-        title="List media devices"
-        onPress={async () => console.log(await mediaDevices.enumerateDevices())}
-      />
+      <Text>
+        {caller.name} - {caller.number}
+      </Text>
 
-      <Button
-        title="Get user media"
-        onPress={async () => {
-          const newStream = await mediaDevices.getUserMedia({
-            audio: true,
-            video: false,
-          });
+      {!session && <Button title="Call 101" onPress={() => makeCall('101')} />}
 
-          setStream(newStream);
-        }}
-      />
+      {session && (
+        <Button
+          title="Hangup"
+          onPress={() => clearSession(sessionRef.current)}
+        />
+      )}
 
-      <Button title="Call 101" onPress={() => answerOrCall('101')} />
+      {session?.direction === 'incoming' && (
+        <Button title="Answer" onPress={() => answerCall()} />
+      )}
     </>
   );
 };

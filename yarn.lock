@@ -5298,6 +5298,16 @@ react-is@^16.12.0, react-is@^16.8.1, react-is@^16.8.4, react-is@^16.9.0:
   resolved "https://registry.yarnpkg.com/react-is/-/react-is-16.13.1.tgz#789729a4dc36de2999dc156dd6c1d9c18cea56a4"
   integrity sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==
 
+react-native-callkeep@^3.1.4:
+  version "3.1.4"
+  resolved "https://registry.yarnpkg.com/react-native-callkeep/-/react-native-callkeep-3.1.4.tgz#3dc19d41e0589dc318ce657b1a734bcdf9ac2144"
+  integrity sha512-gzusmv6r5APwR+TlZRCepnmLI2NQZzOhQb3OYI3msvqCu0fBMnX00L3GjTQkJ2cj7goLrfwZwpzUpt2mW6EGEw==
+
+react-native-incall-manager@^3.3.0:
+  version "3.3.0"
+  resolved "https://registry.yarnpkg.com/react-native-incall-manager/-/react-native-incall-manager-3.3.0.tgz#69f4ada83b5a8db464b1cfae368dadbae4a949eb"
+  integrity sha512-SvomgHUoKqVso/BGv02b4ndBqenlqYqW3pptZz5qHwteidKFNWI6ny+PPw5X55MdK0lyTbzBoiT3DwS06Qu0lg==
+
 react-native-webrtc@^1.84.1:
   version "1.84.1"
   resolved "https://registry.yarnpkg.com/react-native-webrtc/-/react-native-webrtc-1.84.1.tgz#0287e50edfcf0a3d13fda3d8854a8adbbcb0be4f"
@@ -6478,6 +6488,11 @@ utils-merge@1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/utils-merge/-/utils-merge-1.0.1.tgz#9f95710f50a267947b2ccc124741c1028427e713"
   integrity sha1-n5VxD1CiZ5R7LMwSR0HBAoQn5xM=
+
+uuid-random@^1.3.2:
+  version "1.3.2"
+  resolved "https://registry.yarnpkg.com/uuid-random/-/uuid-random-1.3.2.tgz#96715edbaef4e84b1dcf5024b00d16f30220e2d0"
+  integrity sha512-UOzej0Le/UgkbWEO8flm+0y+G+ljUon1QWTEZOq1rnMAsxo2+SckbiZdKzAHHlVh6gJqI1TjC/xwgR50MuCrBQ==
 
 uuid@^3.3.2:
   version "3.4.0"
