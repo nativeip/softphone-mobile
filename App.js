@@ -1,12 +1,27 @@
-import React, {useState, useEffect, useCallback} from 'react';
-import {Text, StatusBar, Button, Vibration, AppRegistry} from 'react-native';
+import React, {useState, useEffect, useCallback, useMemo} from 'react';
+import {
+  Text,
+  StatusBar,
+  Button,
+  Vibration,
+  AppRegistry,
+  Platform,
+} from 'react-native';
 import {RTCPeerConnection} from 'react-native-webrtc';
 import InCallManager from 'react-native-incall-manager';
 import CallKeep from 'react-native-callkeep';
-import ramdomUuid from 'uuid-random';
+import {v4} from 'uuid';
 import * as JsSIP from 'jssip';
+import ForegroundService from '@voximplant/react-native-foreground-service';
+import BackgroundTimer from 'react-native-background-timer';
 
 import useReferredState from './src/hooks/useReferredState';
+
+window.setTimeout = (fn, ms) => BackgroundTimer.setTimeout(fn, ms);
+window.clearTimeout = (timeoutId) => BackgroundTimer.clearTimeout(timeoutId);
+window.setInterval = (fn, ms) => BackgroundTimer.setInterval(fn, ms);
+window.clearInterval = (intervalId) =>
+  BackgroundTimer.clearInterval(intervalId);
 
 const App = () => {
   const [peer] = useState({
@@ -15,20 +30,37 @@ const App = () => {
     user: '111',
   });
 
-  const callOptions = {
-    mediaConstraints: {
-      audio: true,
-      video: false,
-      pcConfig: {
-        iceServers: [{urls: ['stun:stun.l.google.com:19302']}],
+  const callOptions = useMemo(
+    () => ({
+      mediaConstraints: {
+        audio: true,
+        video: false,
+        pcConfig: {
+          iceServers: [{urls: ['stun:stun.l.google.com:19302']}],
+        },
       },
-    },
-  };
+    }),
+    [],
+  );
+
+  const END_CALL_REASONS = useMemo(
+    () => ({
+      BUSY: 1,
+      REJECTED: 2,
+      REDIRECTED: 3,
+      UNAVAILABLE: 1,
+      NOT_FOUND: 1,
+      ADDRESS_INCOMPLETE: 1,
+      INCOMPATIBLE_SDP: 1,
+      MISSING_SDP: 1,
+      AUTHENTICATION_ERROR: 1,
+    }),
+    [],
+  );
 
   const [phoneStatus, setPhoneStatus] = useState('');
-  const [callUuid, setCallUuid] = useState('');
+  const [callId, callIdRef, setCallId] = useReferredState('');
   const [callStatus, setCallStatus] = useState('');
-  const [callTime, setCallTime] = useState(0);
   const [caller, setCaller] = useState({});
   const [callNumber, setCallNumber] = useState('');
   const [phone, phoneRef, setPhone] = useReferredState(null);
@@ -36,19 +68,19 @@ const App = () => {
 
   useEffect(() => {
     requestPermissions();
+    createForegroundService();
     register();
 
-    return unregister;
+    // return unregister;
   }, [register, unregister]);
 
   const register = useCallback(() => {
-    RTCPeerConnection.prototype.addTrack = function(track, stream) {
+    RTCPeerConnection.prototype.addTrack = function (track, stream) {
       this.addStream(stream);
     };
 
-    configureCallKeep();
-
     JsSIP.debug.enable('JsSIP:*');
+    // JsSIP.debug.disable();
 
     if (!peer.server || !peer.pass || !peer.user) {
       return;
@@ -79,26 +111,35 @@ const App = () => {
       setPhoneStatus('Falha de registro'),
     );
 
-    newPhone.on('newRTCSession', event => handleNewSession(event.session));
+    newPhone.on('newRTCSession', (event) => handleNewSession(event.session));
 
     newPhone.start();
 
     setPhone(newPhone);
-  }, [peer, setPhone, handleNewSession]);
+
+    configureCallKeep();
+  }, [peer, setPhone, handleNewSession, configureCallKeep]);
 
   const unregister = useCallback(() => {
     if (!phoneRef.current) {
       return;
     }
 
-    // clearSession(sessionRef.current);
-
     phoneRef.current.stop();
     phoneRef.current.removeAllListeners();
     phoneRef.current.unregister();
 
     setPhone(null);
+    CallKeep.endAllCalls();
     CallKeep.setAvailable(false);
+
+    CallKeep.removeEventListener('answerCall');
+    CallKeep.removeEventListener('endCall');
+    CallKeep.removeEventListener('didPerformSetMutedCallAction');
+    CallKeep.removeEventListener('didToggleHoldCallAction');
+    CallKeep.removeEventListener('didPerformDTMFAction');
+
+    ForegroundService.stopService();
   }, [phoneRef, setPhone]);
 
   const requestPermissions = async () => {
@@ -122,12 +163,13 @@ const App = () => {
     }
   };
 
-  const configureCallKeep = async () => {
+  const configureCallKeep = useCallback(async () => {
     AppRegistry.registerHeadlessTask(
       'RNCallKeepBackgroundMessage',
       () => ({name, callUUID, handle}) => {
         // Make your call here
-        console.log('>>> Make your call now');
+        // CallKeep.backToForeground();
+        console.log('>>> MAKE YOUR OUTGOING CALL NOW');
 
         return Promise.resolve();
       },
@@ -138,21 +180,67 @@ const App = () => {
         appName: 'Infinity Softphone',
       },
       android: {
-        alertTitle: 'Permissions required',
+        alertTitle: 'Permissões Necessárias',
         alertDescription:
-          'This application needs to access your phone accounts',
-        cancelButton: 'Cancel',
-        okButton: 'ok',
-        imageName: 'phone_account_icon',
-        // additionalPermissions: [PermissionsAndroid.PERMISSIONS.example]
+          'Essa aplicação precisa de permissões para acessar seu telefone',
+        cancelButton: 'Cancelar',
+        okButton: 'Aceitar',
+        imageName: 'sim_icon',
       },
     };
 
     await CallKeep.setup(options);
     CallKeep.setAvailable(true);
+
+    CallKeep.addEventListener('answerCall', ({callUUID}) => {
+      answerCall(callUUID);
+    });
+
+    CallKeep.addEventListener('endCall', ({callUUID}) => {
+      clearSession(sessionRef.current, callUUID);
+    });
+
+    CallKeep.addEventListener('didPerformSetMutedCallAction', ({muted}) => {
+      const streams = sessionRef.current.connection._localStreams;
+      streams.forEach((stream) => {
+        const tracks = stream.getTracks();
+        tracks.forEach((track) => (track.enabled = !muted));
+      });
+    });
+
+    CallKeep.addEventListener('didPerformDTMFAction', ({digits}) => {
+      sessionRef.current.sendDTMF(digits);
+    });
+  }, [answerCall, clearSession, sessionRef]);
+
+  const createForegroundService = async () => {
+    if (Platform.Version >= 26) {
+      const channelConfig = {
+        id: 'channelId',
+        name: 'Channel name',
+        description: 'Channel description',
+        enableVibration: false,
+      };
+
+      ForegroundService.createNotificationChannel(channelConfig);
+    }
+
+    const notificationConfig = {
+      channelId: 'channelId',
+      id: 3456,
+      title: 'Infinity Softphone',
+      text: 'Some text',
+      icon: 'ic_notification',
+    };
+
+    try {
+      await ForegroundService.startService(notificationConfig);
+    } catch (e) {
+      console.error(e);
+    }
   };
 
-  const makeCall = number => {
+  const makeCall = (number) => {
     if (!phoneRef.current?.isRegistered()) {
       return;
     }
@@ -163,29 +251,36 @@ const App = () => {
     );
 
     setSession(newSession);
-    const uuid = ramdomUuid();
-    CallKeep.startCall(uuid, number, 'Fábio Gross');
-    setCallUuid(uuid);
+
+    const uuid = v4();
+    CallKeep.startCall(uuid, number, number);
+    setCallId(uuid);
   };
 
-  const answerCall = () => {
-    if (sessionRef.current?.isInProgress()) {
-      sessionRef.current.answer(callOptions);
-      CallKeep.answerIncomingCall(callUuid);
-    }
-  };
+  const answerCall = useCallback(
+    (uuid) => {
+      if (sessionRef.current?.isInProgress()) {
+        sessionRef.current.answer(callOptions);
+        CallKeep.answerIncomingCall(uuid || callId);
+      }
+    },
+    [callOptions, callId, sessionRef],
+  );
 
   const handleNewSession = useCallback(
-    newSession => {
+    (newSession) => {
       if (newSession.direction === 'incoming') {
         InCallManager.startRingtone('_BUNDLE_');
         Vibration.vibrate([1000, 2000, 3000], true);
       }
 
-      newSession.on('ended', () => clearSession(newSession));
-      newSession.on('failed', () => clearSession(newSession));
       newSession.on('accepted', () => updateUI(newSession));
       newSession.on('confirmed', () => updateUI(newSession));
+      newSession.on('ended', () => clearSession(newSession));
+
+      newSession.on('failed', ({cause}) =>
+        clearSession(newSession, null, cause),
+      );
 
       updateUI(newSession);
       setSession(newSession);
@@ -194,7 +289,7 @@ const App = () => {
   );
 
   const updateUI = useCallback(
-    newSession => {
+    (newSession) => {
       if (newSession.isInProgress()) {
         const number = newSession.remote_identity.uri.user;
         const name = newSession.remote_identity.display_name;
@@ -203,11 +298,11 @@ const App = () => {
         setCaller({number, name});
 
         if (isIncoming) {
-          const uuid = ramdomUuid();
+          const uuid = v4();
           CallKeep.displayIncomingCall(uuid, number, name);
 
           setCallStatus('Recebendo ligação...');
-          setCallUuid(uuid);
+          setCallId(uuid);
         }
 
         if (!isIncoming) {
@@ -217,41 +312,52 @@ const App = () => {
 
       if (newSession.isEstablished()) {
         setCallStatus('Em ligação...');
-        const name = newSession.remote_identity.display_name;
-        CallKeep.updateDisplay(callUuid, name);
 
-        // startCallTimer();
+        CallKeep.setCurrentCallActive(callIdRef.current);
 
         InCallManager.stopRingtone();
         Vibration.cancel();
         InCallManager.start({media: 'audio'});
       }
     },
-    [callUuid],
+    [callIdRef, setCallId],
   );
 
   const clearSession = useCallback(
-    newSession => {
+    (newSession, uuid, cause) => {
       if (newSession?.isEstablished() || newSession?.isInProgress()) {
+        if (newSession.direction === 'incoming') {
+          CallKeep.rejectCall(uuid || callIdRef.current);
+        }
+
         newSession.terminate();
+      }
+
+      if (cause) {
+        console.log({
+          uuid: uuid || callIdRef.current,
+          cause: END_CALL_REASONS[cause.toUpperCase()] ?? 1,
+        });
+
+        CallKeep.reportEndCallWithUUID(
+          uuid || callIdRef.current,
+          END_CALL_REASONS[cause.toUpperCase()] ?? 1,
+        );
       }
 
       InCallManager.stopRingtone();
       Vibration.cancel();
 
-      // stopCallTimer();
-
       InCallManager.stop();
-      CallKeep.endCall(callUuid);
+      CallKeep.endCall(uuid || callIdRef.current);
 
-      setCallUuid('');
+      setCallId('');
       setCallStatus('');
       setCallNumber('');
       setCaller({});
-      setCallTime(0);
       setSession(null);
     },
-    [setSession, callUuid],
+    [setSession, callIdRef, setCallId, END_CALL_REASONS],
   );
 
   return (
@@ -264,7 +370,7 @@ const App = () => {
         {caller.name} - {caller.number}
       </Text>
 
-      {!session && <Button title="Call 101" onPress={() => makeCall('101')} />}
+      {!session && <Button title="Call 109" onPress={() => makeCall('109')} />}
 
       {session && (
         <Button

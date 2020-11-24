@@ -13,7 +13,10 @@
     <uses-permission android:name="android.permission.BIND_TELECOM_CONNECTION_SERVICE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.READ_PHONE_NUMBERS" />
     <uses-permission android:name="android.permission.CALL_PHONE" />
+    <uses-permission android:name="android.permission.MANAGE_OWN_CALLS" />
+    <uses-permission android:name="android.permission.READ_CALL_LOG" />    
 
     
 
@@ -46,6 +49,8 @@
       </service>
 
       <service android:name="io.wazo.callkeep.RNCallKeepBackgroundMessagingService" />
+
+      <service android:name="com.voximplant.foregroundservice.VIForegroundService" />
     </application>
 
 </manifest>
