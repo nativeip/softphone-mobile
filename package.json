@@ -15,18 +15,18 @@
     "react": "17.0.1",
     "react-native": "0.63.3",
     "react-native-background-timer": "^2.4.1",
-    "react-native-callkeep": "^3.1.4",
+    "react-native-callkeep": "^4.0.0",
     "react-native-incall-manager": "^3.3.0",
     "react-native-webrtc": "^1.84.1",
     "socket.io-client": "^3.0.3",
     "uuid": "^8.3.1"
   },
   "devDependencies": {
-    "@babel/core": "^7.7.2",
+    "@babel/core": "^7.12.8",
     "@babel/runtime": "^7.7.2",
     "@react-native-community/eslint-config": "^2.0.0",
     "babel-jest": "^26.6.3",
-    "eslint": "^7.13.0",
+    "eslint": "^7.14.0",
     "jest": "^26.6.3",
     "metro-react-native-babel-preset": "^0.64.0",
     "react-test-renderer": "17.0.1"
