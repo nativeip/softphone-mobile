@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Text, StatusBar, Button, Vibration, AppRegistry, Platform } from 'react-native';
-import { RTCPeerConnection } from 'react-native-webrtc';
+
 import InCallManager from 'react-native-incall-manager';
 import CallKeep from 'react-native-callkeep';
 import { v4 } from 'uuid';
@@ -62,8 +62,7 @@ const App = () => {
     requestPermissions();
     createForegroundService();
     register();
-
-    // return unregister;
+    return unregister;
   }, [register, unregister]);
 
   const register = useCallback(() => {

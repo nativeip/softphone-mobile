@@ -1,17 +1,28 @@
 import React, { createContext, useReducer } from 'react';
 
+import storeState from './storeState';
+
 import loadLocalStorageUser from './utils/loadLocalStorageUser';
 // import loadLocalStoragePeer from './utils/loadLocalStoragePeer';
 import { connectToMonitorSocket, disconnectFromMonitorSocket } from './utils/monitorSocket';
+import Phone from './utils/phone';
+
+const peer = {
+  server: 'infinity.nativeip.com.br',
+  pass: 'Native.111',
+  user: '111',
+};
 
 const initialState = {
   notifications: 0,
   user: loadLocalStorageUser(),
-  peer: {
-    server: 'infinity.nativeip.com.br',
-    pass: 'Native.111',
-    user: '111',
-  },
+  phone: Phone.register(peer),
+  phoneStatus: '',
+  callStatus: '',
+  callNumber: '',
+  callId: null,
+  caller: { number: '', name: '' },
+  peer,
   socket: connectToMonitorSocket(loadLocalStorageUser().api),
 };
 
@@ -46,8 +57,6 @@ const StoreProvider = ({ children }) => {
         };
 
       case 'ADD_NOTIFICATIONS':
-        console.log('add', action.payload);
-
         return {
           ...state,
           notifications: state.notifications + action.payload.notifications,
@@ -59,10 +68,57 @@ const StoreProvider = ({ children }) => {
           notifications: 0,
         };
 
+      case 'SET_PHONE_STATUS':
+        return {
+          ...state,
+          phoneStatus: action.payload,
+        };
+
+      case 'SET_CALL_STATUS':
+        return {
+          ...state,
+          callStatus: action.payload,
+        };
+
+      case 'CLEAR_CALL_STATUS':
+        return {
+          ...state,
+          callStatus: action.payload,
+        };
+
+      case 'SET_CALLER':
+        return {
+          ...state,
+          caller: action.payload,
+        };
+
+      case 'CLEAR_CALLER':
+        return {
+          ...state,
+          caller: action.payload,
+        };
+
+      case 'SET_CALL_NUMBER':
+        return {
+          ...state,
+          callNumber: action.payload,
+        };
+
+      case 'CLEAR_CALL_NUMBER':
+        return {
+          ...state,
+          callNumber: action.payload,
+        };
+
       default:
         return state;
     }
   }, initialState);
+
+  if (!storeState.isReady) {
+    storeState.isReady = true;
+    storeState.dispatch = params => dispatch(params);
+  }
 
   return <Provider value={{ state, dispatch }}>{children}</Provider>;
 };

@@ -15,7 +15,7 @@
     "@react-navigation/bottom-tabs": "^5.11.2",
     "@react-navigation/native": "^5.8.10",
     "@voximplant/react-native-foreground-service": "^2.0.0",
-    "jssip": "Jhoy1992/JsSIP",
+    "jssip": "github:Jhoy1992/jssip#3.6.5",
     "react": "17.0.1",
     "react-native": "0.63.3",
     "react-native-background-timer": "^2.4.1",
