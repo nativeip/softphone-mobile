@@ -17,7 +17,7 @@ export const createForegroundService = async () => {
     channelId: 'channelId',
     id: 3456,
     title: 'Infinity Softphone',
-    text: 'Some text',
+    text: 'Clique aqui para voltar ao softphone',
     icon: 'ic_notification',
   };
 
