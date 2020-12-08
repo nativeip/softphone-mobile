@@ -1,7 +1,6 @@
 import io from 'socket.io-client';
 
 export const connectToMonitorSocket = server => {
-  console.log(server);
   if (!server) {
     return null;
   }

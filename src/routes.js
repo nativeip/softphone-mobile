@@ -1,6 +1,7 @@
 import React, { useContext } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
 import { store } from './store';
@@ -8,6 +9,9 @@ import { store } from './store';
 import Softphone from './pages/Softphone';
 import Configurations from './pages/Configurations';
 import History from './pages/History';
+import Chat from './pages/Chat';
+import Contacts from './pages/Contacts';
+import Contact from './pages/Contact';
 
 const Tab = createBottomTabNavigator();
 
@@ -58,8 +62,8 @@ export default function Routes() {
             tabBarBadge: state.phoneStatus === 'Registrado' ? null : 'falha',
           }}
         />
-        <Tab.Screen name="Chat" component={History} />
-        <Tab.Screen name="Contacts" component={History} />
+        <Tab.Screen name="Chat" component={Chat} />
+        <Tab.Screen name="Contacts" component={Contacts} />
         <Tab.Screen
           name="History"
           component={History}
@@ -67,6 +71,10 @@ export default function Routes() {
         />
         <Tab.Screen name="Configurations" component={Configurations} />
       </Tab.Navigator>
+
+      {/* <Stack.Navigator>
+        <Stack.Screen name="Contact" component={Contact} />
+      </Stack.Navigator> */}
     </NavigationContainer>
   );
 }

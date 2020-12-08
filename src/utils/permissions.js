@@ -1,4 +1,5 @@
 import InCallManager from 'react-native-incall-manager';
+import { PermissionsAndroid } from 'react-native';
 
 export const requestPermissions = async () => {
   if (InCallManager.recordPermission !== 'granted') {
@@ -15,5 +16,9 @@ export const requestPermissions = async () => {
     } catch (error) {
       console.error('Error getting permissions to  camera: ', error.message);
     }
+  }
+
+  if (!(await PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.READ_CONTACTS))) {
+    await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.READ_CONTACTS);
   }
 };
