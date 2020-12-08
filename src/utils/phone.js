@@ -6,7 +6,7 @@ import * as JsSIP from 'jssip';
 
 import store from '../storeState';
 
-import { clearSession } from '../actions/sessionActions';
+import { clearSession, setSession } from '../actions/sessionActions';
 import { setPhoneStatus } from '../actions/phoneStatusActions';
 import { setCallStatus, clearCallStatus } from '../actions/callStatusActions';
 import { clearCallNumber } from '../actions/callNumberActions';
@@ -40,7 +40,7 @@ let phoneStatus = '';
 let session = null;
 let uuid = v4();
 
-const register = peer => {
+const register = user => {
   if (phone) {
     unregister(phone);
   }
@@ -48,14 +48,14 @@ const register = peer => {
   // JsSIP.debug.enable('JsSIP:*');
   JsSIP.debug.disable();
 
-  if (!peer.server || !peer.pass || !peer.user) {
+  if (!user.server || !user.secret || !user.peer) {
     return null;
   }
 
   const sip = {
-    host: `wss://${peer?.server}/ws`,
-    password: peer?.pass,
-    uri: `sip:${peer?.user}@${peer?.server}`,
+    host: `wss://${user?.server}/ws`,
+    password: user?.secret,
+    uri: `sip:${user?.peer}@${user?.server}`,
   };
 
   const socket = new JsSIP.WebSocketInterface(sip.host);
@@ -112,10 +112,12 @@ const unregister = () => {
     return;
   }
 
+  phone.terminateSessions();
   phone.stop();
   phone.removeAllListeners();
   phone.unregister();
 
+  setStatus('Sem registro');
   return null;
 };
 
@@ -129,7 +131,7 @@ const getStatus = () => {
 };
 
 const makeCall = (number, server) => {
-  if (!phone.isRegistered()) {
+  if (!phone.isRegistered() || !number) {
     return;
   }
 
@@ -161,6 +163,7 @@ const handleNewSession = newSession => {
   newSession.on('failed', ({ cause }) => clearCall(newSession, uuid, cause));
 
   updateUI(newSession, uuid);
+  store.dispatch(setSession(newSession));
 };
 
 const updateUI = (session, uuid) => {

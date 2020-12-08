@@ -1,47 +1,63 @@
-import React, { createContext, useReducer } from 'react';
+import React, { createContext, useReducer, useEffect, useState } from 'react';
 
 import storeState from './storeState';
 
 import loadLocalStorageUser from './utils/loadLocalStorageUser';
-// import loadLocalStoragePeer from './utils/loadLocalStoragePeer';
+import { loadConfig } from './utils/loadLocalStorageConfig';
 import { connectToMonitorSocket, disconnectFromMonitorSocket } from './utils/monitorSocket';
 import Phone from './utils/phone';
 
-const peer = {
-  server: 'infinity.nativeip.com.br',
-  pass: 'Native.111',
-  user: '111',
-};
-
 const initialState = {
-  notifications: 0,
-  user: loadLocalStorageUser(),
-  phone: Phone.register(peer),
+  notifications: 3,
+  user: {},
+  phone: null,
+  session: null,
   phoneStatus: '',
   callStatus: '',
   callNumber: '',
   callId: null,
   caller: { number: '', name: '' },
-  peer,
-  socket: connectToMonitorSocket(loadLocalStorageUser().api),
+  socket: null,
 };
 
 const store = createContext(initialState);
 const { Provider } = store;
 
 const StoreProvider = ({ children }) => {
+  const [user, setUser] = useState({});
+  const [phone, setPhone] = useState(null);
+  const [socket, setSocket] = useState(null);
+
+  useEffect(() => {
+    const loadLocalConfig = async () => {
+      const data = await loadConfig();
+
+      setUser(data);
+      setPhone(Phone.register(data));
+      setSocket(connectToMonitorSocket(data.server));
+    };
+
+    loadLocalConfig();
+  }, []);
+
   const [state, dispatch] = useReducer((state, action) => {
     switch (action.type) {
-      case 'SAVE_USER':
+      case 'SET_CONFIG':
         return {
           ...state,
           user: action.payload,
         };
 
-      case 'SAVE_PEER':
+      case 'REGISTER_PHONE':
         return {
           ...state,
-          peer: action.payload,
+          phone: Phone.register(action.payload),
+        };
+
+      case 'UNREGISTER_PHONE':
+        return {
+          ...state,
+          phone: Phone.unregister(),
         };
 
       case 'CONNECT_SOCKET':
@@ -65,7 +81,19 @@ const StoreProvider = ({ children }) => {
       case 'CLEAR_NOTIFICATIONS':
         return {
           ...state,
-          notifications: 0,
+          notifications: null,
+        };
+
+      case 'SET_SESSION':
+        return {
+          ...state,
+          session: action.payload,
+        };
+
+      case 'CLEAR_SESSION':
+        return {
+          ...state,
+          session: action.payload,
         };
 
       case 'SET_PHONE_STATUS':
@@ -120,7 +148,7 @@ const StoreProvider = ({ children }) => {
     storeState.dispatch = params => dispatch(params);
   }
 
-  return <Provider value={{ state, dispatch }}>{children}</Provider>;
+  return <Provider value={{ state: { ...state, user, phone }, dispatch }}>{children}</Provider>;
 };
 
 export { store, StoreProvider };

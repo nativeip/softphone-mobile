@@ -1,6 +1,7 @@
 import io from 'socket.io-client';
 
-export const connectToMonitorSocket = (server) => {
+export const connectToMonitorSocket = server => {
+  console.log(server);
   if (!server) {
     return null;
   }
@@ -11,14 +12,12 @@ export const connectToMonitorSocket = (server) => {
   });
 
   socket.on('connect', () => console.log(`Sucessfull connected to ${server}`));
-  socket.on('connect_error', () =>
-    console.log(`Failed to connect on ${server}`),
-  );
+  socket.on('connect_error', () => console.log(`Failed to connect on ${server}`));
 
   return socket;
 };
 
-export const disconnectFromMonitorSocket = (socket) => {
+export const disconnectFromMonitorSocket = socket => {
   if (!socket) {
     return null;
   }

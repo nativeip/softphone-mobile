@@ -1,6 +1,6 @@
-export const register = ({ dispatch }) => ({
+export const register = user => ({
   type: 'REGISTER_PHONE',
-  payload: dispatch,
+  payload: user,
 });
 
 export const unregister = () => ({

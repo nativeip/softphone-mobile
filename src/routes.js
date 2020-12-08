@@ -51,14 +51,20 @@ export default function Routes() {
           },
           tabBarBadgeStyle: { backgroundColor: '#ff9532', color: '#fff' },
         })}>
-        <Tab.Screen name="Softphone" component={Softphone} />
-        <Tab.Screen name="Chat" component={History} />
         <Tab.Screen
-          name="Contacts"
+          name="Softphone"
+          component={Softphone}
+          options={{
+            tabBarBadge: state.phoneStatus === 'Registrado' ? null : 'falha',
+          }}
+        />
+        <Tab.Screen name="Chat" component={History} />
+        <Tab.Screen name="Contacts" component={History} />
+        <Tab.Screen
+          name="History"
           component={History}
           options={{ tabBarBadge: state.notifications }}
         />
-        <Tab.Screen name="History" component={History} />
         <Tab.Screen name="Configurations" component={Configurations} />
       </Tab.Navigator>
     </NavigationContainer>

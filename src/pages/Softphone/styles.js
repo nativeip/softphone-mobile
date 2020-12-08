@@ -70,7 +70,7 @@ export const CallButton = styled.TouchableOpacity`
   border-radius: 35px;
   height: 70px;
   width: 70px;
-  background-color: #389400;
+  background-color: ${props => props.background};
   align-items: center;
   justify-content: center;
 `;

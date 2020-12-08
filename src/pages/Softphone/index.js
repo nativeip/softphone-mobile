@@ -7,8 +7,7 @@ import Phone from '../../utils/phone';
 
 import { setPhoneStatus } from '../../actions/phoneStatusActions';
 
-const DIAL_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '*', '0', '#'];
-
+import Header from '../../components/Header';
 import {
   Container,
   NumberContainer,
@@ -24,11 +23,13 @@ import {
 } from './styles';
 
 const App = () => {
+  const DIAL_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '*', '0', '#'];
   const { state, dispatch } = useContext(store);
   const [number, setNumber] = useState('');
 
   useEffect(() => {
     dispatch(setPhoneStatus(Phone.getStatus()));
+    StatusBar.setHidden(false);
   }, []);
 
   const padClick = key => {
@@ -45,40 +46,47 @@ const App = () => {
   };
 
   return (
-    <Container>
+    <>
       <StatusBar barStyle="dark-content" backgroundColor="white" />
 
-      <Text>Digite o número desejado:</Text>
+      <Header />
 
-      <NumberContainer>
-        <Number>{number}</Number>
+      <Container>
+        {state.session && <Text>Em ligação</Text>}
 
-        <Erase onPress={() => padClick('erase')} onLongPress={() => setNumber('')}>
-          <Ionicons name="backspace-outline" size={30} color="#444" />
-        </Erase>
-      </NumberContainer>
+        <NumberContainer>
+          <Number>{number}</Number>
 
-      <Divisor />
+          <Erase onPress={() => padClick('erase')} onLongPress={() => setNumber('')}>
+            <Ionicons name="backspace-outline" size={30} color="#444" />
+          </Erase>
+        </NumberContainer>
 
-      <DialPad
-        data={DIAL_KEYS}
-        numColumns={3}
-        key={3}
-        keyExtractor={(item, index) => index.toString()}
-        renderItem={({ item, index }) => (
-          <DialNumberContainer key={index}>
-            <DialNumber activeOpacity={0.5} onPress={() => padClick(item)}>
-              <DialNumberText>{item}</DialNumberText>
-            </DialNumber>
-          </DialNumberContainer>
-        )}></DialPad>
+        <Divisor />
 
-      <CallContainer>
-        <CallButton onPress={() => Phone.makeCall(number, state.peer.server)}>
-          <Ionicons color="#fff" name="call" size={35} />
-        </CallButton>
-      </CallContainer>
-    </Container>
+        <DialPad
+          data={DIAL_KEYS}
+          numColumns={3}
+          key={3}
+          keyExtractor={(item, index) => index.toString()}
+          renderItem={({ item, index }) => (
+            <DialNumberContainer key={index}>
+              <DialNumber activeOpacity={0.5} onPress={() => padClick(item)}>
+                <DialNumberText>{item}</DialNumberText>
+              </DialNumber>
+            </DialNumberContainer>
+          )}></DialPad>
+
+        <CallContainer>
+          <CallButton
+            background={state.session || !number ? '#ccc' : '#389400'}
+            disabled={state.session || !number ? true : false}
+            onPress={() => Phone.makeCall(number, state.user.server)}>
+            <Ionicons color="#fff" name="call" size={35} />
+          </CallButton>
+        </CallContainer>
+      </Container>
+    </>
   );
 };
 

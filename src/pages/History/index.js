@@ -14,9 +14,9 @@ const History = () => {
   }, [dispatch]);
 
   return (
-    <SafeAreaView>
+    <>
       <Text>This is a test...</Text>
-    </SafeAreaView>
+    </>
   );
 };
 
