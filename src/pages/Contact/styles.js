@@ -1,22 +1,32 @@
 import styled from 'styled-components/native';
 
 export const Container = styled.View`
-  padding: 20px 10px 0 10px;
+  margin: 20px;
   flex: 1;
-  align-items: center;
+`;
+
+export const AvatarContainer = styled.View`
+  margin-top: 10px;
   justify-content: center;
+  align-items: center;
 `;
 
-export const ContactsList = styled.FlatList`
-  flex: 1;
-  width: 100%;
+export const Avatar = styled.Image`
+  width: 100px;
+  height: 100px;
+  border-radius: 50px;
+  justify-content: center;
+  margin-bottom: 10px;
 `;
 
-export const ContactContainer = styled.View`
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  padding: 10px;
-  margin: 3px 0;
+export const Title = styled.Text`
+  font-size: 18px;
+  border-bottom-color: #666;
+  color: #444;
+  border-bottom-width: 1px;
+  padding-bottom: 5px;
+  margin-bottom: 10px;
+  font-weight: bold;
 `;
 
 export const ContactNameContainer = styled.View`
@@ -26,18 +36,24 @@ export const ContactNameContainer = styled.View`
 `;
 
 export const ContactName = styled.Text`
-  font-size: 15px;
+  font-size: 18px;
   margin-left: 5px;
   font-weight: bold;
   color: #ff9532;
 `;
 
-export const PhoneContainer = styled.View`
+export const PhoneContainer = styled.TouchableOpacity`
   flex-direction: row;
   align-items: center;
+  margin-top: 10px;
 `;
 
 export const PhoneNumber = styled.Text`
-  font-size: 14px;
+  font-size: 16px;
   margin-left: 5px;
+`;
+
+export const Controls = styled.View`
+  flex: 1;
+  justify-content: flex-end;
 `;
