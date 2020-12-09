@@ -39,7 +39,7 @@ export const ContactName = styled.Text`
   font-size: 18px;
   margin-left: 5px;
   font-weight: bold;
-  color: #ff9532;
+  color: #2d486a;
 `;
 
 export const PhoneContainer = styled.TouchableOpacity`

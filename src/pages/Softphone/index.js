@@ -30,7 +30,7 @@ const App = () => {
   useEffect(() => {
     dispatch(setPhoneStatus(Phone.getStatus()));
     StatusBar.setHidden(false);
-  }, []);
+  }, [state.socket]);
 
   const padClick = key => {
     if (key === 'erase') {

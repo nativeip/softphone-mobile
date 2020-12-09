@@ -8,7 +8,7 @@ import { connectToMonitorSocket, disconnectFromMonitorSocket } from './utils/mon
 import Phone from './utils/phone';
 
 const initialState = {
-  notifications: 3,
+  notifications: null,
   user: {},
   phone: null,
   session: null,
@@ -34,7 +34,7 @@ const StoreProvider = ({ children }) => {
 
       setUser(data);
       setPhone(Phone.register(data));
-      setSocket(connectToMonitorSocket(data.server));
+      setSocket(connectToMonitorSocket(data.server, data.peer));
     };
 
     loadLocalConfig();

@@ -7,6 +7,7 @@ import useDebounce from '../../hooks/useDebounce';
 import Phone from '../../utils/phone/';
 import api from '../../services/api';
 import Contact from '../Contact';
+import Header from '../../components/Header';
 import { store } from '../../store';
 
 import {
@@ -27,7 +28,7 @@ import {
 const Stack = createStackNavigator();
 
 const Contacts = ({ navigation }) => {
-  const { state, dispatch } = useContext(store);
+  const { state } = useContext(store);
   const [phoneContacts, setPhoneContacts] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
@@ -87,51 +88,54 @@ const Contacts = ({ navigation }) => {
   };
 
   return (
-    <Container>
-      {!phoneContacts.length ? (
-        <Loading>
-          <Icon name="loader" size={24} color="#aaa" />
-          <LoadingText>Carregando contatos...</LoadingText>
-        </Loading>
-      ) : (
-        <>
-          <SearchContainer>
-            <Search
-              placeholder="Pesquisar contato"
-              value={searchTerm}
-              onChangeText={value => setSearchTerm(value)}
+    <>
+      <Header />
+      <Container>
+        {!phoneContacts.length ? (
+          <Loading>
+            <Icon name="loader" size={24} color="#aaa" />
+            <LoadingText>Carregando contatos...</LoadingText>
+          </Loading>
+        ) : (
+          <>
+            <SearchContainer>
+              <Search
+                placeholder="Pesquisar contato"
+                value={searchTerm}
+                onChangeText={value => setSearchTerm(value)}
+              />
+              <ClearSearch>
+                <Icon name="x" size={24} color="#666" onPress={() => setSearchTerm('')} />
+              </ClearSearch>
+            </SearchContainer>
+
+            <ContactsList
+              data={debouncedSearchTerm ? contactsFiltered : phoneContacts}
+              keyExtractor={item => item.id.toString()}
+              renderItem={({ item }) => (
+                <ContactContainer
+                  key={item.id}
+                  onPress={() => handleContactSelect(item)}
+                  onLongPress={() => navigation.navigate('Contact', { ...item })}
+                  delayLongPress={500}>
+                  <ContactNameContainer>
+                    <Icon name="user" size={16} />
+                    <ContactName>{item.name}</ContactName>
+                  </ContactNameContainer>
+
+                  {item.phones.map(phone => (
+                    <PhoneContainer key={phone.id}>
+                      <Icon name={phone.label === 'home' ? 'home' : 'phone'} size={14} />
+                      <PhoneNumber>{phone.number}</PhoneNumber>
+                    </PhoneContainer>
+                  ))}
+                </ContactContainer>
+              )}
             />
-            <ClearSearch>
-              <Icon name="x" size={24} color="#666" onPress={() => setSearchTerm('')} />
-            </ClearSearch>
-          </SearchContainer>
-
-          <ContactsList
-            data={debouncedSearchTerm ? contactsFiltered : phoneContacts}
-            keyExtractor={item => item.id.toString()}
-            renderItem={({ item }) => (
-              <ContactContainer
-                key={item.id}
-                onPress={() => handleContactSelect(item)}
-                onLongPress={() => navigation.navigate('Contact', { ...item })}
-                delayLongPress={500}>
-                <ContactNameContainer>
-                  <Icon name="user" size={16} />
-                  <ContactName>{item.name}</ContactName>
-                </ContactNameContainer>
-
-                {item.phones.map(phone => (
-                  <PhoneContainer key={phone.id}>
-                    <Icon name={phone.label === 'home' ? 'home' : 'phone'} size={14} />
-                    <PhoneNumber>{phone.number}</PhoneNumber>
-                  </PhoneContainer>
-                ))}
-              </ContactContainer>
-            )}
-          />
-        </>
-      )}
-    </Container>
+          </>
+        )}
+      </Container>
+    </>
   );
 };
 
