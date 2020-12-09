@@ -19,6 +19,10 @@ export const requestPermissions = async () => {
   }
 
   if (!(await PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.READ_CONTACTS))) {
-    await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.READ_CONTACTS);
+    try {
+      await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.READ_CONTACTS);
+    } catch (error) {
+      console.error('Error getting permissions to  read contacts: ', error.message);
+    }
   }
 };

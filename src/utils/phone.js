@@ -45,8 +45,8 @@ const register = user => {
     unregister(phone);
   }
 
-  // JsSIP.debug.enable('JsSIP:*');
-  JsSIP.debug.disable();
+  JsSIP.debug.enable('JsSIP:*');
+  // JsSIP.debug.disable();
 
   if (!user.server || !user.secret || !user.peer) {
     return null;
@@ -98,10 +98,6 @@ const register = user => {
 
   CallKeep.addEventListener('didPerformDTMFAction', ({ digits }) => {
     session.sendDTMF(digits);
-  });
-
-  CallKeep.addEventListener('checkReachability', () => {
-    CallKeep.setReachable();
   });
 
   return phone;

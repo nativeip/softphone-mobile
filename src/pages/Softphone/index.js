@@ -45,6 +45,10 @@ const App = () => {
     setNumber(number + key);
   };
 
+  const callNumber = number => {
+    Phone.makeCall(number, state.user.server);
+  };
+
   return (
     <>
       <StatusBar barStyle="dark-content" backgroundColor="white" />
@@ -81,7 +85,7 @@ const App = () => {
           <CallButton
             background={state.session || !number ? '#ccc' : '#389400'}
             disabled={state.session || !number ? true : false}
-            onPress={() => Phone.makeCall(number, state.user.server)}>
+            onPress={() => callNumber(number)}>
             <Ionicons color="#fff" name="call" size={35} />
           </CallButton>
         </CallContainer>
