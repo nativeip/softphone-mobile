@@ -9,7 +9,8 @@ export const Container = styled.View`
   border-radius: 8px;
   margin-bottom: 8px;
   border-width: 1px;
-  border-color: #312e38;
+  border-color: #312e38;  
+  display: ${props => (props.visible ? 'flex' : 'none')}
 
   flex-direction: row;
   align-items: center;

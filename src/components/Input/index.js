@@ -10,7 +10,7 @@ import { useField } from '@unform/core';
 
 import { Container, TextInput, Icon } from './styles';
 
-const Input = ({ name, icon, ...rest }, ref) => {
+const Input = ({ name, icon, visible = true, ...rest }, ref) => {
   const inputElementRef = useRef(null);
   const { registerField, defaultValue = '', fieldName, error } = useField(name);
   const inputValueRef = useRef({ value: defaultValue });
@@ -31,6 +31,9 @@ const Input = ({ name, icon, ...rest }, ref) => {
     focus() {
       inputElementRef.current.focus();
     },
+    getValue() {
+      return inputValueRef.current.value;
+    },
   }));
 
   useEffect(() => {
@@ -50,7 +53,7 @@ const Input = ({ name, icon, ...rest }, ref) => {
   }, [fieldName, registerField]);
 
   return (
-    <Container isFocused={isFocused} isErrored={!!error}>
+    <Container isFocused={isFocused} isErrored={!!error} visible={visible}>
       <Icon name={icon} size={20} color={isFocused || isFilled ? '#ff9000' : '#666360'} />
 
       <TextInput

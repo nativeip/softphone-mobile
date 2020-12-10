@@ -1,6 +1,14 @@
+import { AppRegistry } from 'react-native';
 import CallKeep from 'react-native-callkeep';
 
 export const configureCallKeep = async () => {
+  AppRegistry.registerHeadlessTask(
+    'RNCallKeepBackgroundMessage',
+    () => ({ name, callUUID, handle }) => {
+      return Promise.resolve();
+    },
+  );
+
   const options = {
     ios: {
       appName: 'Infinity Softphone',

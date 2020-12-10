@@ -10,6 +10,7 @@ export const Container = styled.View`
 export const NumberContainer = styled.View`
   flex-direction: row;
   justify-content: space-between;
+  align-items: center;
 `;
 
 export const Number = styled.Text`
@@ -17,7 +18,6 @@ export const Number = styled.Text`
   font-size: 35px;
   text-align: center;
   color: #389400;
-  margin: 10px 0;
   flex: 1;
 `;
 

@@ -4,6 +4,7 @@ import Icon from 'react-native-vector-icons/Feather';
 import api from '../../services/api';
 import formatDateTime from '../../utils/formatDateTime';
 import useDebounce from '../../hooks/useDebounce';
+import useReferredState from '../../hooks/useReferredState';
 import Phone from '../../utils/phone/';
 import { socket } from '../../utils/monitorSocket';
 
@@ -11,6 +12,8 @@ import { store } from '../../store';
 import { clearNotifications } from '../../actions/notificationsActions';
 
 import Header from '../../components/Header';
+import Failed from '../../components/Failed';
+
 import {
   Container,
   Loading,
@@ -36,14 +39,40 @@ const status = {
 
 const History = ({ navigation }) => {
   const { state, dispatch } = useContext(store);
-  const [calls, setCalls] = useState([]);
+  const [socketConnection, setSocketConnection] = useState(false);
+  const [calls, callsRef, setCalls] = useReferredState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(2);
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
   useEffect(() => {
-    if (socket) {
+    const unsubscribeFocus = navigation.addListener('focus', () => {
+      dispatch(clearNotifications());
+    });
+
+    const unsubscribeBlur = navigation.addListener('blur', () => {
+      dispatch(clearNotifications());
+    });
+
+    if (!calls.length || !socketConnection) {
+      loadLastCalls();
+    }
+
+    connectSocket();
+
+    return () => {
+      unsubscribeFocus();
+      unsubscribeBlur();
+    };
+  }, [navigation, state.user]);
+
+  useEffect(() => {
+    loadLastCalls();
+  }, [debouncedSearchTerm]);
+
+  const connectSocket = () => {
+    if (socket && !socketConnection) {
       socket.on('historyCallReceived', data => {
         if (data.destCallerIdNum != state.user.peer) {
           return;
@@ -60,7 +89,7 @@ const History = ({ navigation }) => {
         const status = dialStatus == 'CANCEL' ? 'NOANSWER' : dialStatus;
 
         setCalls(
-          [{ id, name, startTime, phone, status }, ...calls].sort((a, b) =>
+          [{ id, name, startTime, phone, status }, ...callsRef.current].sort((a, b) =>
             a.startTime > b.startTime ? -1 : 1,
           ),
         );
@@ -71,70 +100,52 @@ const History = ({ navigation }) => {
           return;
         }
 
-        const {
-          uniqueId: id,
-          callerIdName: name,
-          startTime,
-          callerIdNum: phone,
-          dialStatus,
-        } = data;
+        const { uniqueId: id, callerIdName: name, startTime, callerIdNum: phone } = data;
+
         const status = 'OUT';
 
         setCalls(
-          [{ id, name, startTime, phone, status }, ...calls].sort((a, b) =>
+          [{ id, name, startTime, phone, status }, ...callsRef.current].sort((a, b) =>
             a.startTime > b.startTime ? -1 : 1,
           ),
         );
       });
+
+      setSocketConnection(true);
     }
-  }, []);
+  };
 
-  useEffect(() => {
-    const unsubscribeFocus = navigation.addListener('focus', () => {
-      dispatch(clearNotifications());
+  const loadLastCalls = async () => {
+    if (!state.user?.server) {
+      return;
+    }
+
+    setLoading(true);
+
+    const { data } = await api.post(`https://${state.user.server}/api/token`, {
+      username: state.user.user,
+      password: state.user.pass,
     });
 
-    const unsubscribeBlur = navigation.addListener('blur', () => {
-      dispatch(clearNotifications());
-    });
+    api.defaults.headers['Authorization'] = `Bearer ${data.token}`;
 
-    return () => {
-      unsubscribeFocus();
-      unsubscribeBlur();
-    };
-  }, [navigation]);
-
-  useEffect(() => {
-    const loadLastCalls = async () => {
-      setLoading(true);
-
-      const { data } = await api.post(`https://${state.user.server}/api/token`, {
-        username: state.user.user,
-        password: state.user.pass,
-      });
-
-      api.defaults.headers['Authorization'] = `Bearer ${data.token}`;
-
-      const { data: newCalls } = await api.get(`https://${state.user.server}/api/historyCalls`, {
-        params: {
-          peerId: data.user.Peer.id,
-          limit: 50,
-          $or: {
-            name: [{ $like: `%${debouncedSearchTerm}%` }],
-            phone: [{ $like: `%${debouncedSearchTerm}%` }],
-          },
+    const { data: newCalls } = await api.get(`https://${state.user.server}/api/historyCalls`, {
+      params: {
+        peerId: data.user.Peer.id,
+        limit: 50,
+        $or: {
+          name: [{ $like: `%${debouncedSearchTerm}%` }],
+          phone: [{ $like: `%${debouncedSearchTerm}%` }],
         },
-      });
+      },
+    });
 
-      setCalls(newCalls);
-      setLoading(false);
-    };
-
-    loadLastCalls();
-  }, [debouncedSearchTerm]);
+    setCalls(newCalls);
+    setLoading(false);
+  };
 
   const loadHistory = async (pageIndex, calls) => {
-    if (debouncedSearchTerm) {
+    if (debouncedSearchTerm || !state.user.server) {
       return;
     }
 
@@ -158,7 +169,7 @@ const History = ({ navigation }) => {
     });
 
     setPage(page + 1);
-    setCalls([...calls, ...newCalls]);
+    setCalls([...callsRef.current, ...newCalls]);
   };
 
   const handleHistorySelect = ({ phone }) => {
@@ -169,7 +180,9 @@ const History = ({ navigation }) => {
     <>
       <Header />
       <Container>
-        {loading ? (
+        {!state.user?.server ? (
+          <Failed navigation={navigation} />
+        ) : loading ? (
           <Loading>
             <Icon name="loader" size={24} color="#aaa" />
             <LoadingText>Carregando histórico...</LoadingText>

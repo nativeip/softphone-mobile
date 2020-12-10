@@ -2,7 +2,6 @@ import React, { createContext, useReducer, useEffect, useState } from 'react';
 
 import storeState from './storeState';
 
-import loadLocalStorageUser from './utils/loadLocalStorageUser';
 import { loadConfig } from './utils/loadLocalStorageConfig';
 import { connectToMonitorSocket, disconnectFromMonitorSocket } from './utils/monitorSocket';
 import Phone from './utils/phone';
@@ -63,7 +62,7 @@ const StoreProvider = ({ children }) => {
       case 'CONNECT_SOCKET':
         return {
           ...state,
-          socket: connectToMonitorSocket(action.payload.server),
+          socket: connectToMonitorSocket(action.payload.server, action.payload.peer),
         };
 
       case 'DISCONNECT_SOCKET':
@@ -148,7 +147,9 @@ const StoreProvider = ({ children }) => {
     storeState.dispatch = params => dispatch(params);
   }
 
-  return <Provider value={{ state: { ...state, user, phone }, dispatch }}>{children}</Provider>;
+  return (
+    <Provider value={{ state: { ...state, user, phone, socket }, dispatch }}>{children}</Provider>
+  );
 };
 
 export { store, StoreProvider };

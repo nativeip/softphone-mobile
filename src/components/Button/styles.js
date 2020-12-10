@@ -1,6 +1,7 @@
 import styled from 'styled-components/native';
 
 export const Container = styled.TouchableOpacity`
+  padding: 0 20px;
   border-radius: 8px;
   background-color: ${props => (props.color ? props.color : '#2d486a')};
   margin-top: 8px;
@@ -10,7 +11,7 @@ export const Container = styled.TouchableOpacity`
 `;
 
 export const ButtonText = styled.Text`
-  padding: 18px 5px;
+  padding: ${props => (props.padding ? `${props.padding}px` : '20px')} 5px;
   font-size: 14px;
   color: #fff;
   text-align: center;

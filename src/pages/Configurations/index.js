@@ -1,26 +1,26 @@
-import React, { useContext, useRef, useEffect } from 'react';
-import { KeyboardAvoidingView, ScrollView, Platform, Alert } from 'react-native';
+import React, { useContext, useRef, useEffect, useState } from 'react';
+import { KeyboardAvoidingView, ScrollView, Platform, DevSettings } from 'react-native';
 import RNExitApp from 'react-native-exit-app';
 import { Form } from '@unform/mobile';
 import Toast from 'react-native-toast-message';
 
+import api from '../../services/api';
 import { store } from '../../store';
-import { unregister, register } from '../../actions/phoneActions';
+import { unregister } from '../../actions/phoneActions';
 
 import { stopForegroundService } from '../../utils/foregroundService';
 import { unregisterCallKeep } from '../../utils/callKeep';
+import { loadConfig, saveConfig } from '../../utils/loadLocalStorageConfig';
 
 import Header from '../../components/Header';
 import Button from '../../components/Button';
 import Input from '../../components/Input';
 
-import { loadConfig, saveConfig } from '../../utils/loadLocalStorageConfig';
-import { setConfig } from '../../actions/userConfigActions';
-
 import { Container, Title, Controls } from './styles';
 
 const Configurations = ({ navigation }) => {
   const { state, dispatch } = useContext(store);
+  const [peerError, setPeerError] = useState(false);
   const formRef = useRef(null);
   const serverInputRef = useRef(null);
   const userInputRef = useRef(null);
@@ -37,10 +37,58 @@ const Configurations = ({ navigation }) => {
     loadLocalData();
   });
 
+  const loadPeerConfig = async ({ server, user, pass }) => {
+    try {
+      const { data } = await api.post(`https://${server}/api/token`, {
+        username: user,
+        password: pass,
+      });
+
+      const { Peer } = data?.user;
+
+      if (!Peer) {
+        return null;
+      }
+
+      const { username, secret } = Peer;
+
+      return { peer: String(username), secret };
+    } catch (error) {
+      return null;
+    }
+  };
+
   const handleSaveData = async data => {
-    await saveConfig(data);
-    dispatch(setConfig(data));
-    dispatch(register(data));
+    let peer = {};
+
+    if (data.server && data.user && data.pass && !peerError) {
+      peer = await loadPeerConfig(data);
+
+      if (!peer) {
+        Toast.show({
+          type: 'error',
+          text1: 'Ramal',
+          text2: 'Erro ao buscar informações do ramal, preencha manualmente!',
+        });
+
+        formRef.current.setData({ ...data, peer: '', secret: '' });
+        setPeerError(true);
+        peerInputRef.current?.focus();
+        return;
+      }
+    }
+
+    if (!data.server || !data.user || !data.pass || !peer.secret || !peer.peer) {
+      Toast.show({
+        type: 'error',
+        text1: 'Configurações',
+        text2: 'Preencha todos os campos para continuar!',
+      });
+
+      formRef.current.setData(data);
+    }
+
+    await saveConfig({ ...data, ...peer });
 
     Toast.show({
       type: 'success',
@@ -48,6 +96,7 @@ const Configurations = ({ navigation }) => {
       text2: 'As configurações foram salvas com sucesso!',
     });
 
+    DevSettings.reload();
     navigation.navigate('Softphone');
   };
 
@@ -99,7 +148,7 @@ const Configurations = ({ navigation }) => {
                 icon="lock"
                 placeholder="Senha native"
                 returnKeyType="next"
-                onSubmitEditing={() => peerInputRef.current?.focus()}
+                onSubmitEditing={() => formRef.current?.submitForm()}
                 secureTextEntry
               />
 
@@ -112,6 +161,7 @@ const Configurations = ({ navigation }) => {
                 placeholder="Ramal"
                 returnKeyType="next"
                 onSubmitEditing={() => secretInputRef.current?.focus()}
+                visible={peerError}
               />
 
               <Input
@@ -121,6 +171,7 @@ const Configurations = ({ navigation }) => {
                 placeholder="Senha ramal"
                 returnKeyType="send"
                 onSubmitEditing={() => formRef.current?.submitForm()}
+                visible={peerError}
                 secureTextEntry
               />
             </Form>

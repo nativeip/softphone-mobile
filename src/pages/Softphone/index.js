@@ -58,8 +58,6 @@ const Softphone = ({ navigation }) => {
       <Header />
 
       <Container>
-        {state.session && <Text>Em ligação</Text>}
-
         <NumberContainer>
           <Number>{number}</Number>
 
@@ -67,9 +65,7 @@ const Softphone = ({ navigation }) => {
             <Ionicons name="backspace-outline" size={30} color="#444" />
           </Erase>
         </NumberContainer>
-
         <Divisor />
-
         <DialPad
           data={DIAL_KEYS}
           numColumns={3}
@@ -82,7 +78,6 @@ const Softphone = ({ navigation }) => {
               </DialNumber>
             </DialNumberContainer>
           )}></DialPad>
-
         <CallContainer>
           <CallButton
             background={state.session || !number ? '#ccc' : '#389400'}

@@ -8,6 +8,7 @@ import Phone from '../../utils/phone/';
 import api from '../../services/api';
 import Contact from '../Contact';
 import Header from '../../components/Header';
+import Failed from '../../components/Failed';
 import { store } from '../../store';
 
 import {
@@ -35,32 +36,16 @@ const Contacts = ({ navigation }) => {
   const [contactsFiltered, setContactsFiltered] = useState([]);
 
   useEffect(() => {
-    const getContacts = async () => {
-      const contacts = await PhoneContacts.getAll();
-
-      const newPhoneContacts = contacts
-        .filter(contact => contact.phoneNumbers.length > 0)
-        .map(contact => {
-          const { recordID: id, displayName: name, phoneNumbers: phones, emailAddresses } = contact;
-          return { id, name, phones, emailAddresses };
-        });
-
-      const { data } = await api.get(`https://${state.user.server}/api/contacts`);
-
-      const newNativeContacts = data.map(({ id, email, name, phone }) => ({
-        id,
-        name,
-        phones: [{ id, number: phone }],
-        emailAddresses: [{ id, email }],
-      }));
-
-      setPhoneContacts(
-        [...newNativeContacts, ...newPhoneContacts].sort((a, b) => (a.name > b.name ? 1 : -1)),
-      );
-    };
+    const unsubscribeFocus = navigation.addListener('focus', () => {
+      if (!phoneContacts.length) {
+        getContacts();
+      }
+    });
 
     getContacts();
-  }, []);
+
+    return unsubscribeFocus;
+  }, [getContacts, navigation, state.user]);
 
   useEffect(() => {
     const searchContacts = () => {
@@ -68,15 +53,63 @@ const Contacts = ({ navigation }) => {
         return;
       }
 
-      const newContacts = phoneContacts.filter(contact =>
+      const newPhoneContacts = phoneContacts.filter(contact =>
         contact.name?.toLowerCase()?.includes(debouncedSearchTerm.toLowerCase()),
       );
 
-      setContactsFiltered(newContacts);
+      setContactsFiltered(newPhoneContacts);
     };
 
     searchContacts();
   }, [debouncedSearchTerm]);
+
+  const getContacts = async () => {
+    if (!state.user?.server) {
+      return;
+    }
+
+    const contacts = await PhoneContacts.getAll();
+
+    const newPhoneContacts = contacts
+      .filter(contact => contact.phoneNumbers.length > 0)
+      .map(contact => {
+        const { recordID: id, displayName: name, phoneNumbers: phones, emailAddresses } = contact;
+        return { id, name, phones, emailAddresses };
+      });
+
+    const { data: auth } = await api.post(`https://${state.user.server}/api/token`, {
+      username: state.user.user,
+      password: state.user.pass,
+    });
+
+    api.defaults.headers['Authorization'] = `Bearer ${auth.token}`;
+
+    const { data: nativeContacts } = await api.get(`https://${state.user.server}/api/contacts`);
+
+    const newNativeContacts = nativeContacts.map(({ id, email, name, phone }) => ({
+      id,
+      name,
+      phones: [{ id, number: phone }],
+      emailAddresses: [{ id, email }],
+    }));
+
+    const { data: peers } = await api.get(`https://${state.user.server}/api/peers`, {
+      params: { attributes: '["id", "name", "username", "email"]' },
+    });
+
+    const newPeers = peers.map(({ id, name, username, email }) => ({
+      id,
+      name,
+      phones: [{ id, number: username }],
+      emailAddresses: [{ id, email }],
+    }));
+
+    setPhoneContacts(
+      [...newNativeContacts, ...newPeers, ...newPhoneContacts].sort((a, b) =>
+        a.name.toLowerCase() > b.name.toLowerCase() ? 1 : -1,
+      ),
+    );
+  };
 
   const handleContactSelect = contact => {
     if (contact.phones.length > 1) {
@@ -91,7 +124,9 @@ const Contacts = ({ navigation }) => {
     <>
       <Header />
       <Container>
-        {!phoneContacts.length ? (
+        {!state.user?.server ? (
+          <Failed navigation={navigation} />
+        ) : !phoneContacts.length ? (
           <Loading>
             <Icon name="loader" size={24} color="#aaa" />
             <LoadingText>Carregando contatos...</LoadingText>
@@ -111,10 +146,10 @@ const Contacts = ({ navigation }) => {
 
             <ContactsList
               data={debouncedSearchTerm ? contactsFiltered : phoneContacts}
-              keyExtractor={item => item.id.toString()}
-              renderItem={({ item }) => (
+              keyExtractor={(item, index) => index.toString()}
+              renderItem={({ item, index }) => (
                 <ContactContainer
-                  key={item.id}
+                  key={index}
                   onPress={() => handleContactSelect(item)}
                   onLongPress={() => navigation.navigate('Contact', { ...item })}
                   delayLongPress={500}>

@@ -1,6 +1,6 @@
-export const connect = server => ({
+export const connect = (server, peer) => ({
   type: 'CONNECT_SOCKET',
-  payload: { server },
+  payload: { server, peer },
 });
 
 export const disconnect = socket => ({
