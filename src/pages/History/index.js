@@ -43,36 +43,50 @@ const History = ({ navigation }) => {
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
   useEffect(() => {
-    socket.on('historyCallReceived', data => {
-      if (data.destCallerIdNum != state.user.peer) {
-        return;
-      }
+    if (socket) {
+      socket.on('historyCallReceived', data => {
+        if (data.destCallerIdNum != state.user.peer) {
+          return;
+        }
 
-      const { uniqueId: id, callerIdName: name, startTime, callerIdNum: phone, dialStatus } = data;
+        const {
+          uniqueId: id,
+          callerIdName: name,
+          startTime,
+          callerIdNum: phone,
+          dialStatus,
+        } = data;
 
-      const status = dialStatus == 'CANCEL' ? 'NOANSWER' : dialStatus;
+        const status = dialStatus == 'CANCEL' ? 'NOANSWER' : dialStatus;
 
-      setCalls(
-        [{ id, name, startTime, phone, status }, ...calls].sort((a, b) =>
-          a.startTime > b.startTime ? -1 : 1,
-        ),
-      );
-    });
+        setCalls(
+          [{ id, name, startTime, phone, status }, ...calls].sort((a, b) =>
+            a.startTime > b.startTime ? -1 : 1,
+          ),
+        );
+      });
 
-    socket.on('historyCallOut', data => {
-      if (data.callerIdNum != state.user.peer) {
-        return;
-      }
+      socket.on('historyCallOut', data => {
+        if (data.callerIdNum != state.user.peer) {
+          return;
+        }
 
-      const { uniqueId: id, callerIdName: name, startTime, callerIdNum: phone, dialStatus } = data;
-      const status = 'OUT';
+        const {
+          uniqueId: id,
+          callerIdName: name,
+          startTime,
+          callerIdNum: phone,
+          dialStatus,
+        } = data;
+        const status = 'OUT';
 
-      setCalls(
-        [{ id, name, startTime, phone, status }, ...calls].sort((a, b) =>
-          a.startTime > b.startTime ? -1 : 1,
-        ),
-      );
-    });
+        setCalls(
+          [{ id, name, startTime, phone, status }, ...calls].sort((a, b) =>
+            a.startTime > b.startTime ? -1 : 1,
+          ),
+        );
+      });
+    }
   }, []);
 
   useEffect(() => {

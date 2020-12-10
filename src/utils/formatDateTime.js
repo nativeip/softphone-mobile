@@ -1,3 +1,6 @@
+import 'intl';
+import 'intl/locale-data/jsonp/pt-BR';
+
 const formatDateTime = date => {
   const options = {
     month: '2-digit',

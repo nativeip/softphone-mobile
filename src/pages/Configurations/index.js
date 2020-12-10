@@ -2,6 +2,7 @@ import React, { useContext, useRef, useEffect } from 'react';
 import { KeyboardAvoidingView, ScrollView, Platform, Alert } from 'react-native';
 import RNExitApp from 'react-native-exit-app';
 import { Form } from '@unform/mobile';
+import Toast from 'react-native-toast-message';
 
 import { store } from '../../store';
 import { unregister, register } from '../../actions/phoneActions';
@@ -18,7 +19,7 @@ import { setConfig } from '../../actions/userConfigActions';
 
 import { Container, Title, Controls } from './styles';
 
-const Configurations = () => {
+const Configurations = ({ navigation }) => {
   const { state, dispatch } = useContext(store);
   const formRef = useRef(null);
   const serverInputRef = useRef(null);
@@ -40,6 +41,14 @@ const Configurations = () => {
     await saveConfig(data);
     dispatch(setConfig(data));
     dispatch(register(data));
+
+    Toast.show({
+      type: 'success',
+      text1: 'Configurações salvas',
+      text2: 'As configurações foram salvas com sucesso!',
+    });
+
+    navigation.navigate('Softphone');
   };
 
   const exitApp = () => {

@@ -43,7 +43,6 @@ const StoreProvider = ({ children }) => {
   const [state, dispatch] = useReducer((state, action) => {
     switch (action.type) {
       case 'SET_CONFIG':
-        console.log(action);
         return {
           ...state,
           user: action.payload,

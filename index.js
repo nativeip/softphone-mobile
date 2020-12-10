@@ -25,6 +25,6 @@ LogBox.ignoreLogs(['Setting a timer', 'Remote debugger', 'registerHeadlessTask']
 
 AppRegistry.registerComponent(appName, () => App);
 
-createForegroundService();
 requestPermissions();
 configureCallKeep();
+createForegroundService();

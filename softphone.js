@@ -150,17 +150,6 @@ const App = () => {
   };
 
   const configureCallKeep = useCallback(async () => {
-    AppRegistry.registerHeadlessTask(
-      'RNCallKeepBackgroundMessage',
-      () => ({ name, callUUID, handle }) => {
-        // Make your call here
-        // CallKeep.backToForeground();
-        console.log('>>> MAKE YOUR OUTGOING CALL NOW');
-
-        return Promise.resolve();
-      },
-    );
-
     const options = {
       ios: {
         appName: 'Infinity Softphone',

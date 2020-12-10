@@ -2,6 +2,7 @@ import { Vibration } from 'react-native';
 import CallKeep from 'react-native-callkeep';
 import InCallManager from 'react-native-incall-manager';
 import { v4 } from 'uuid';
+import Toast from 'react-native-toast-message';
 import * as JsSIP from 'jssip';
 
 import store from '../storeState';
@@ -127,6 +128,19 @@ const getStatus = () => {
 };
 
 const makeCall = (number, server) => {
+  const options = {
+    alertTitle: 'Conta não habilitada',
+    alertDescription: 'Habilite a conta Infinity para fazer chamadas!',
+  };
+
+  if (!CallKeep.hasDefaultPhoneAccount(options)) {
+    Toast.show({
+      type: 'error',
+      text1: 'Conta não habilitada',
+      text2: 'Habilite a conta Infinity para fazer chamadas!',
+    });
+  }
+
   if (!phone.isRegistered() || !number) {
     return;
   }
