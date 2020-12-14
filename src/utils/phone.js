@@ -193,6 +193,8 @@ const updateUI = (session, uuid) => {
 };
 
 const clearCall = (session, uuid, cause) => {
+  console.log({ session, uuid, cause });
+
   if (session?.isEstablished() || session?.isInProgress()) {
     if (session.direction === 'incoming') {
       CallKeep.rejectCall(uuid);

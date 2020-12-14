@@ -1,4 +1,5 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState, useCallback } from 'react';
+import { Text } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
 
 import api from '../../services/api';
@@ -29,6 +30,7 @@ import {
   InfoContainer,
   TimeContainer,
   CallTimer,
+  LoadingMore,
 } from './styles';
 
 const status = {
@@ -43,8 +45,10 @@ const History = ({ navigation }) => {
   const [calls, callsRef, setCalls] = useReferredState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
+  const [footerLoading, setFooterLoading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [page, setPage] = useState(2);
-  const debouncedSearchTerm = useDebounce(searchTerm, 500);
+  const debouncedSearchTerm = useDebounce(searchTerm, 250);
 
   useEffect(() => {
     const unsubscribeFocus = navigation.addListener('focus', () => {
@@ -65,11 +69,11 @@ const History = ({ navigation }) => {
       unsubscribeFocus();
       unsubscribeBlur();
     };
-  }, [navigation, state.user]);
+  }, []);
 
   useEffect(() => {
     loadLastCalls();
-  }, [debouncedSearchTerm]);
+  }, [debouncedSearchTerm, loadLastCalls]);
 
   const connectSocket = () => {
     if (socket && !socketConnection) {
@@ -115,11 +119,12 @@ const History = ({ navigation }) => {
     }
   };
 
-  const loadLastCalls = async () => {
+  const loadLastCalls = useCallback(async () => {
     if (!state.user?.server) {
       return;
     }
 
+    setIsRefreshing(true);
     setLoading(true);
 
     const { data } = await api.post(`https://${state.user.server}/api/token`, {
@@ -142,13 +147,15 @@ const History = ({ navigation }) => {
 
     setCalls(newCalls);
     setLoading(false);
-  };
+    setIsRefreshing(false);
+  }, [debouncedSearchTerm, setCalls, state.user.server, state.user.user, state.user.pass]);
 
-  const loadHistory = async (pageIndex, calls) => {
+  const loadHistory = async pageIndex => {
     if (debouncedSearchTerm || !state.user.server) {
       return;
     }
 
+    setFooterLoading(true);
     const { data } = await api.post(`https://${state.user.server}/api/token`, {
       username: state.user.user,
       password: state.user.pass,
@@ -170,11 +177,29 @@ const History = ({ navigation }) => {
 
     setPage(page + 1);
     setCalls([...callsRef.current, ...newCalls]);
+    setFooterLoading(false);
   };
 
   const handleHistorySelect = ({ phone }) => {
     Phone.makeCall(phone, state.user.server);
   };
+
+  const renderItem = ({ item: call, index }) => (
+    <CallContainer key={index} onPress={() => handleHistorySelect(call)} delayLongPress={500}>
+      <InfoContainer>
+        <TimeContainer>
+          <Icon name="clock" size={12} />
+          <CallTimer>{formatDateTime(new Date(call.startTime))}</CallTimer>
+        </TimeContainer>
+        {status[call.status]}
+      </InfoContainer>
+
+      <CallerContainer>
+        <CallNumber>{call.phone}</CallNumber>
+        <CallName>{` <${call.name}>`}</CallName>
+      </CallerContainer>
+    </CallContainer>
+  );
 
   return (
     <>
@@ -202,28 +227,15 @@ const History = ({ navigation }) => {
 
             <CallsList
               data={calls}
-              keyExtractor={call => call.id.toString()}
+              keyExtractor={(call, index) => index.toString()}
               onEndReached={() => loadHistory(page, calls)}
               onEndReachedThreshold={0.2}
-              renderItem={({ item: call }) => (
-                <CallContainer
-                  key={call.id}
-                  onPress={() => handleHistorySelect(call)}
-                  delayLongPress={500}>
-                  <InfoContainer>
-                    <TimeContainer>
-                      <Icon name="clock" size={12} />
-                      <CallTimer>{formatDateTime(new Date(call.startTime))}</CallTimer>
-                    </TimeContainer>
-                    {status[call.status]}
-                  </InfoContainer>
-
-                  <CallerContainer>
-                    <CallNumber>{call.phone}</CallNumber>
-                    <CallName>{` <${call.name}>`}</CallName>
-                  </CallerContainer>
-                </CallContainer>
-              )}
+              ListFooterComponent={
+                footerLoading && <LoadingMore name="loader" size={25} color="#ccc" />
+              }
+              refreshing={isRefreshing}
+              onRefresh={loadLastCalls}
+              renderItem={renderItem}
             />
           </>
         )}

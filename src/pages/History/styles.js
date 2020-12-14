@@ -1,4 +1,5 @@
 import styled from 'styled-components/native';
+import Icon from 'react-native-vector-icons/Feather';
 
 export const Container = styled.View`
   padding: 20px 10px 0 10px;
@@ -90,4 +91,11 @@ export const ClearSearch = styled.TouchableOpacity`
   align-self: flex-end;
   margin: 10px;
   padding-right: 10px;
+`;
+
+export const LoadingMore = styled(Icon)`
+  margin: 10px;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
 `;

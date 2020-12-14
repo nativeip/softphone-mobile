@@ -1,5 +1,6 @@
 import React, { useContext, useRef, useEffect, useState } from 'react';
-import { KeyboardAvoidingView, ScrollView, Platform, DevSettings } from 'react-native';
+import { KeyboardAvoidingView, ScrollView, Platform } from 'react-native';
+import RNRestart from 'react-native-restart';
 import RNExitApp from 'react-native-exit-app';
 import { Form } from '@unform/mobile';
 import Toast from 'react-native-toast-message';
@@ -19,7 +20,7 @@ import Input from '../../components/Input';
 import { Container, Title, Controls } from './styles';
 
 const Configurations = ({ navigation }) => {
-  const { state, dispatch } = useContext(store);
+  const { dispatch } = useContext(store);
   const [peerError, setPeerError] = useState(false);
   const formRef = useRef(null);
   const serverInputRef = useRef(null);
@@ -96,8 +97,7 @@ const Configurations = ({ navigation }) => {
       text2: 'As configurações foram salvas com sucesso!',
     });
 
-    DevSettings.reload();
-    navigation.navigate('Softphone');
+    RNRestart.Restart();
   };
 
   const exitApp = () => {

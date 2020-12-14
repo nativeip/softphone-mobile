@@ -32,8 +32,9 @@ const Contacts = ({ navigation }) => {
   const { state } = useContext(store);
   const [phoneContacts, setPhoneContacts] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const debouncedSearchTerm = useDebounce(searchTerm, 500);
+  const debouncedSearchTerm = useDebounce(searchTerm, 250);
   const [contactsFiltered, setContactsFiltered] = useState([]);
+  const [isRefreshing, setIsRefreshing] = useState(true);
 
   useEffect(() => {
     const unsubscribeFocus = navigation.addListener('focus', () => {
@@ -45,7 +46,7 @@ const Contacts = ({ navigation }) => {
     getContacts();
 
     return unsubscribeFocus;
-  }, [getContacts, navigation, state.user]);
+  }, []);
 
   useEffect(() => {
     const searchContacts = () => {
@@ -68,6 +69,7 @@ const Contacts = ({ navigation }) => {
       return;
     }
 
+    setIsRefreshing(true);
     const contacts = await PhoneContacts.getAll();
 
     const newPhoneContacts = contacts
@@ -109,6 +111,7 @@ const Contacts = ({ navigation }) => {
         a.name.toLowerCase() > b.name.toLowerCase() ? 1 : -1,
       ),
     );
+    setIsRefreshing(false);
   };
 
   const handleContactSelect = contact => {
@@ -119,6 +122,26 @@ const Contacts = ({ navigation }) => {
 
     Phone.makeCall(contact.phones[0].number, state.user.server);
   };
+
+  const renderContact = ({ item, index }) => (
+    <ContactContainer
+      key={index}
+      onPress={() => handleContactSelect(item)}
+      onLongPress={() => navigation.navigate('Contact', { ...item })}
+      delayLongPress={500}>
+      <ContactNameContainer>
+        <Icon name="user" size={16} />
+        <ContactName>{item.name}</ContactName>
+      </ContactNameContainer>
+
+      {item.phones.map(phone => (
+        <PhoneContainer key={phone.id}>
+          <Icon name={phone.label === 'home' ? 'home' : 'phone'} size={14} />
+          <PhoneNumber>{phone.number}</PhoneNumber>
+        </PhoneContainer>
+      ))}
+    </ContactContainer>
+  );
 
   return (
     <>
@@ -147,25 +170,9 @@ const Contacts = ({ navigation }) => {
             <ContactsList
               data={debouncedSearchTerm ? contactsFiltered : phoneContacts}
               keyExtractor={(item, index) => index.toString()}
-              renderItem={({ item, index }) => (
-                <ContactContainer
-                  key={index}
-                  onPress={() => handleContactSelect(item)}
-                  onLongPress={() => navigation.navigate('Contact', { ...item })}
-                  delayLongPress={500}>
-                  <ContactNameContainer>
-                    <Icon name="user" size={16} />
-                    <ContactName>{item.name}</ContactName>
-                  </ContactNameContainer>
-
-                  {item.phones.map(phone => (
-                    <PhoneContainer key={phone.id}>
-                      <Icon name={phone.label === 'home' ? 'home' : 'phone'} size={14} />
-                      <PhoneNumber>{phone.number}</PhoneNumber>
-                    </PhoneContainer>
-                  ))}
-                </ContactContainer>
-              )}
+              refreshing={isRefreshing}
+              onRefresh={getContacts}
+              renderItem={renderContact}
             />
           </>
         )}

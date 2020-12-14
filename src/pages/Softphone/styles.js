@@ -1,4 +1,4 @@
-import styled, { css } from 'styled-components/native';
+import styled from 'styled-components/native';
 
 export const Container = styled.View`
   background-color: #fafafa;
@@ -40,36 +40,36 @@ export const DialPad = styled.FlatList`
 export const DialNumberContainer = styled.View`
   flex-grow: 1;
   flex-basis: 0;
-  margin: 5px 10px;
+  margin: 3px 10px;
 `;
 
 export const DialNumber = styled.TouchableOpacity`
   margin: 0 10px;
   border: 1px solid #ddd;
   background-color: #f0f0f0;
-  border-radius: 35px;
-  height: 70px;
-  width: 70px;
+  border-radius: 34px;
+  height: 68px;
+  width: 68px;
   justify-content: center;
   align-items: center;
 `;
 
 export const DialNumberText = styled.Text`
   color: #444;
-  font-size: 35px;
+  font-size: 34px;
 `;
 
 export const CallContainer = styled.View`
   flex-direction: row;
   justify-content: center;
-  margin: 10px;
+  margin: 10px 0 0 0;
 `;
 
 export const CallButton = styled.TouchableOpacity`
   margin: 0 10px;
-  border-radius: 35px;
-  height: 70px;
-  width: 70px;
+  border-radius: 34px;
+  height: 68px;
+  width: 68px;
   background-color: ${props => props.background};
   align-items: center;
   justify-content: center;

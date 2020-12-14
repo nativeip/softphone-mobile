@@ -1,5 +1,5 @@
 import React, { useEffect, useContext, useState } from 'react';
-import { Text, StatusBar } from 'react-native';
+import { StatusBar } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import SplashScreen from 'react-native-splash-screen';
 
@@ -23,7 +23,7 @@ import {
   CallButton,
 } from './styles';
 
-const Softphone = ({ navigation }) => {
+const Softphone = () => {
   const DIAL_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '*', '0', '#'];
   const { state, dispatch } = useContext(store);
   const [number, setNumber] = useState('');
@@ -32,7 +32,7 @@ const Softphone = ({ navigation }) => {
     dispatch(setPhoneStatus(Phone.getStatus()));
     StatusBar.setHidden(false);
     SplashScreen.hide();
-  }, []);
+  }, [dispatch]);
 
   const padClick = key => {
     if (key === 'erase') {
@@ -47,8 +47,8 @@ const Softphone = ({ navigation }) => {
     setNumber(number + key);
   };
 
-  const callNumber = async number => {
-    Phone.makeCall(number, state.user.server);
+  const callNumber = async destNumber => {
+    Phone.makeCall(destNumber, state.user.server);
   };
 
   return (
@@ -77,7 +77,8 @@ const Softphone = ({ navigation }) => {
                 <DialNumberText>{item}</DialNumberText>
               </DialNumber>
             </DialNumberContainer>
-          )}></DialPad>
+          )}
+        />
         <CallContainer>
           <CallButton
             background={state.session || !number ? '#ccc' : '#389400'}
