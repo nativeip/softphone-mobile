@@ -1,4 +1,4 @@
-package com.infinity;
+package com.infinitysoftphone;
 
 import android.app.Application;
 import android.content.Context;

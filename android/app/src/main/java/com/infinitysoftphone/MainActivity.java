@@ -1,4 +1,4 @@
-package com.infinity;
+package com.infinitysoftphone;
 
 import com.facebook.react.ReactActivity;
 import org.devio.rn.splashscreen.SplashScreen;

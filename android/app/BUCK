@@ -35,12 +35,12 @@ android_library(
 
 android_build_config(
     name = "build_config",
-    package = "com.infinity",
+    package = "com.infinitysoftphone",
 )
 
 android_resource(
     name = "res",
-    package = "com.infinity",
+    package = "com.infinitysoftphone",
     res = "src/main/res",
 )
 
