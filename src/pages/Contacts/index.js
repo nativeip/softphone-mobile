@@ -131,8 +131,10 @@ const Contacts = ({ navigation }) => {
       return;
     }
 
+    const [phone = {}] = contact.phones;
+
     try {
-      Phone.makeCall(contact.phones[0].number, state.user.server);
+      Phone.makeCall(phone?.number, state.user.server);
     } catch (error) {
       Toast.show({
         type: 'error',

@@ -45,8 +45,8 @@ const register = user => {
     unregister(phone);
   }
 
-  JsSIP.debug.enable('JsSIP:*');
-  // JsSIP.debug.disable();
+  // JsSIP.debug.enable('JsSIP:*');
+  JsSIP.debug.disable();
 
   if (!user.server || !user.secret || !user.peer) {
     return null;
