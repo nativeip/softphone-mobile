@@ -2,6 +2,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import PhoneContacts from 'react-native-contacts';
 import Icon from 'react-native-vector-icons/Feather';
+import Toast from 'react-native-toast-message';
 
 import useDebounce from '../../hooks/useDebounce';
 import Phone from '../../utils/phone/';
@@ -69,49 +70,59 @@ const Contacts = ({ navigation }) => {
       return;
     }
 
-    setIsRefreshing(true);
-    const contacts = await PhoneContacts.getAll();
+    try {
+      setIsRefreshing(true);
+      const contacts = await PhoneContacts.getAll();
 
-    const newPhoneContacts = contacts
-      .filter(contact => contact.phoneNumbers.length > 0)
-      .map(contact => {
-        const { recordID: id, displayName: name, phoneNumbers: phones, emailAddresses } = contact;
-        return { id, name, phones, emailAddresses };
+      const newPhoneContacts = contacts
+        .filter(contact => contact.phoneNumbers.length > 0)
+        .map(contact => {
+          const { recordID: id, displayName: name, phoneNumbers: phones, emailAddresses } = contact;
+          return { id, name, phones, emailAddresses };
+        });
+
+      const { data: auth } = await api.post(`https://${state.user.server}/api/token`, {
+        username: state.user.user,
+        password: state.user.pass,
       });
 
-    const { data: auth } = await api.post(`https://${state.user.server}/api/token`, {
-      username: state.user.user,
-      password: state.user.pass,
-    });
+      api.defaults.headers['Authorization'] = `Bearer ${auth.token}`;
 
-    api.defaults.headers['Authorization'] = `Bearer ${auth.token}`;
+      const { data: nativeContacts } = await api.get(`https://${state.user.server}/api/contacts`);
 
-    const { data: nativeContacts } = await api.get(`https://${state.user.server}/api/contacts`);
+      const newNativeContacts = nativeContacts.map(({ id, email, name, phone }) => ({
+        id,
+        name,
+        phones: [{ id, number: phone }],
+        emailAddresses: [{ id, email }],
+      }));
 
-    const newNativeContacts = nativeContacts.map(({ id, email, name, phone }) => ({
-      id,
-      name,
-      phones: [{ id, number: phone }],
-      emailAddresses: [{ id, email }],
-    }));
+      const { data: peers } = await api.get(`https://${state.user.server}/api/peers`, {
+        params: { attributes: '["id", "name", "username", "email"]' },
+      });
 
-    const { data: peers } = await api.get(`https://${state.user.server}/api/peers`, {
-      params: { attributes: '["id", "name", "username", "email"]' },
-    });
+      const newPeers = peers.map(({ id, name, username, email }) => ({
+        id,
+        name,
+        phones: [{ id, number: username }],
+        emailAddresses: [{ id, email }],
+      }));
 
-    const newPeers = peers.map(({ id, name, username, email }) => ({
-      id,
-      name,
-      phones: [{ id, number: username }],
-      emailAddresses: [{ id, email }],
-    }));
+      setPhoneContacts(
+        [...newNativeContacts, ...newPeers, ...newPhoneContacts].sort((a, b) =>
+          a.name.toLowerCase() > b.name.toLowerCase() ? 1 : -1,
+        ),
+      );
+      setIsRefreshing(false);
+    } catch (error) {
+      Toast.show({
+        type: 'error',
+        text1: 'Contatos',
+        text2: `Erro ao buscar os contatos: ${error.message}`,
+      });
 
-    setPhoneContacts(
-      [...newNativeContacts, ...newPeers, ...newPhoneContacts].sort((a, b) =>
-        a.name.toLowerCase() > b.name.toLowerCase() ? 1 : -1,
-      ),
-    );
-    setIsRefreshing(false);
+      setIsRefreshing(false);
+    }
   };
 
   const handleContactSelect = contact => {
@@ -120,7 +131,15 @@ const Contacts = ({ navigation }) => {
       return;
     }
 
-    Phone.makeCall(contact.phones[0].number, state.user.server);
+    try {
+      Phone.makeCall(contact.phones[0].number, state.user.server);
+    } catch (error) {
+      Toast.show({
+        type: 'error',
+        text1: 'Ligar',
+        text2: 'Erro ao efetuar a ligação: ${error.message}',
+      });
+    }
   };
 
   const renderContact = ({ item, index }) => (
