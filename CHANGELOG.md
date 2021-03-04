@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.3](https://github.com/nativeip/softphone-mobile/compare/v0.0.2...v0.0.3) (2021-03-04)
+
+
+### Features
+
+* Add better error handling in contacts ([98fb500](https://github.com/nativeip/softphone-mobile/commit/98fb50044159170ab8e38c83aa35b18147ba4a74))
+* Add option to hide phone contacts ([ba60efc](https://github.com/nativeip/softphone-mobile/commit/ba60efc2c7c4f47f5cec537589923c55a962d2d4))
+* Add phone validations before call contact ([da9a686](https://github.com/nativeip/softphone-mobile/commit/da9a686b94541df1720c587a1791995b4fe24bf6))
+
+
+### Bug Fixes
+
+* Call peer contact and filter repeated number ([2b6c938](https://github.com/nativeip/softphone-mobile/commit/2b6c938f107e419e431022b0585f4cfe157d1174))
+
 ### [0.0.2](https://github.com/nativeip/softphone-mobile/compare/v0.0.1...v0.0.2) (2021-02-24)
 
 ### 0.0.1 (2020-12-28)
