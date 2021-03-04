@@ -77,7 +77,16 @@ const Contacts = ({ navigation }) => {
       const newPhoneContacts = contacts
         .filter(contact => contact.phoneNumbers.length > 0)
         .map(contact => {
-          const { recordID: id, displayName: name, phoneNumbers: phones, emailAddresses } = contact;
+          const { recordID: id, displayName: name, phoneNumbers, emailAddresses } = contact;
+          const numbers = [];
+
+          const phones = phoneNumbers.filter(phoneNumber => {
+            const repeatedNumber = numbers.includes(phoneNumber.number);
+            numbers.push(phoneNumber.number);
+
+            return !repeatedNumber;
+          });
+
           return { id, name, phones, emailAddresses };
         });
 
@@ -134,7 +143,7 @@ const Contacts = ({ navigation }) => {
     const [phone = {}] = contact.phones;
 
     try {
-      Phone.makeCall(phone?.number, state.user.server);
+      Phone.makeCall(String(phone?.number), state.user.server);
     } catch (error) {
       Toast.show({
         type: 'error',
