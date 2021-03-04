@@ -73,3 +73,19 @@ export const ClearSearch = styled.TouchableOpacity`
   margin: 10px;
   padding-right: 10px;
 `;
+
+export const SwitchContainer = styled.View`
+  width: 100%;
+  flex-direction: row;
+  justify-content: flex-end;
+  align-items: center;
+  margin-bottom: 8px;
+`;
+
+export const SwitchLabel = styled.Text`
+  font-size: 14px;
+  margin-right: 5px;
+  color: #666;
+`;
+
+export const Switch = styled.Switch``;

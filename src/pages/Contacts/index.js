@@ -25,6 +25,9 @@ import {
   SearchContainer,
   ClearSearch,
   Search,
+  SwitchContainer,
+  SwitchLabel,
+  Switch,
 } from './styles';
 
 const Stack = createStackNavigator();
@@ -32,6 +35,7 @@ const Stack = createStackNavigator();
 const Contacts = ({ navigation }) => {
   const { state } = useContext(store);
   const [phoneContacts, setPhoneContacts] = useState([]);
+  const [hidePhoneContacts, setHidePhoneContacts] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearchTerm = useDebounce(searchTerm, 250);
   const [contactsFiltered, setContactsFiltered] = useState([]);
@@ -50,19 +54,7 @@ const Contacts = ({ navigation }) => {
   }, []);
 
   useEffect(() => {
-    const searchContacts = () => {
-      if (!debouncedSearchTerm) {
-        return;
-      }
-
-      const newPhoneContacts = phoneContacts.filter(contact =>
-        contact.name?.toLowerCase()?.includes(debouncedSearchTerm.toLowerCase()),
-      );
-
-      setContactsFiltered(newPhoneContacts);
-    };
-
-    searchContacts();
+    filterContacts(phoneContacts, debouncedSearchTerm, hidePhoneContacts);
   }, [debouncedSearchTerm]);
 
   const getContacts = async () => {
@@ -87,7 +79,7 @@ const Contacts = ({ navigation }) => {
             return !repeatedNumber;
           });
 
-          return { id, name, phones, emailAddresses };
+          return { id, name, phones, emailAddresses, local: true };
         });
 
       const { data: auth } = await api.post(`https://${state.user.server}/api/token`, {
@@ -134,6 +126,16 @@ const Contacts = ({ navigation }) => {
     }
   };
 
+  const filterContacts = (contacts, searchTerm, hideLocalContacts) => {
+    const newContacts = contacts.filter(
+      contact =>
+        (!searchTerm || contact.name?.toLowerCase()?.includes(searchTerm.toLowerCase())) &&
+        (hideLocalContacts ? !contact.local : true),
+    );
+
+    setContactsFiltered(newContacts);
+  };
+
   const handleContactSelect = contact => {
     if (contact.phones.length > 1) {
       navigation.navigate('Contact', { ...contact });
@@ -151,6 +153,14 @@ const Contacts = ({ navigation }) => {
         text2: 'Erro ao efetuar a ligação: ${error.message}',
       });
     }
+  };
+
+  const togglePhoneContacts = hide => {
+    setHidePhoneContacts(hide);
+
+    debouncedSearchTerm
+      ? filterContacts(phoneContacts, debouncedSearchTerm, hide)
+      : filterContacts(phoneContacts, null, hide);
   };
 
   const renderContact = ({ item, index }) => (
@@ -197,8 +207,19 @@ const Contacts = ({ navigation }) => {
               </ClearSearch>
             </SearchContainer>
 
+            <SwitchContainer>
+              <SwitchLabel>Ocultar contatos do celular</SwitchLabel>
+              <Switch
+                value={hidePhoneContacts}
+                onValueChange={value => togglePhoneContacts(value)}
+                trackColor={{ false: '#767577', true: '#119114' }}
+                thumbColor="#f4f3f4"
+                ios_backgroundColor="#3e3e3e"
+              />
+            </SwitchContainer>
+
             <ContactsList
-              data={debouncedSearchTerm ? contactsFiltered : phoneContacts}
+              data={debouncedSearchTerm || hidePhoneContacts ? contactsFiltered : phoneContacts}
               keyExtractor={(item, index) => index.toString()}
               refreshing={isRefreshing}
               onRefresh={getContacts}
